@@ -21,5 +21,6 @@ func main() {
 	defer dump.PanicHandler()
 
 	fmt.Println("hello world")
-	doTask()
+	go dump.WithPanicHandler(doTask)
+	time.Sleep(time.Second)
 }
