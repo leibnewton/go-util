@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/leibnewton/go-util/dump"
@@ -14,13 +15,19 @@ func doTask() {
 }
 
 func main() {
-	err := dump.SetPath(3, "dmp")
+	err := dump.SetPath(3, "dmp", true)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dump.PanicHandler()
 
-	fmt.Println("hello world")
-	go dump.WithPanicHandler(doTask)
-	time.Sleep(time.Second)
+	fmt.Println("hello world:", os.Args)
+	if len(os.Args) > 1 {
+		if os.Args[1] == "panic" {
+			doTask()
+		} else if os.Args[1] == "gopanic" {
+			go dump.WithPanicHandler(doTask)
+			time.Sleep(time.Second)
+		}
+	}
 }

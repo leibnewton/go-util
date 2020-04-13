@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"time"
 
@@ -15,8 +16,15 @@ var (
 	maxDumps int    = 10
 )
 
-func SetPath(max int, dpath string) error {
-	dumpPath = proc.ToAbsPath(dpath)
+// if relativeToWorkDir set to true, will save dump file according to working directory,
+//    otherwise will save dump file according to directory where the exe resides.
+func SetPath(max int, dpath string, relativeToWorkDir bool) error {
+	if relativeToWorkDir {
+		dumpPath, _ = filepath.Abs(dpath)
+	} else {
+		dumpPath = proc.ToAbsPath(dpath)
+	}
+	log.Printf("dumps will be saved to %s", dumpPath)
 	if err := os.MkdirAll(dumpPath, 0777); err != nil {
 		return err
 	}
