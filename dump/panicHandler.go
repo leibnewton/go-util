@@ -2,6 +2,7 @@ package dump
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,35 +36,65 @@ func SetPath(max int, dpath string, relativeToWorkDir bool) error {
 	return nil
 }
 
-func PanicHandler() {
-	if err := recover(); err != nil {
-		fname, ierr := getDumpName()
-		if ierr != nil {
-			log.Printf("PanicHandler: getDumpName failed: %v", ierr)
-			panic(err)
-			return
-		}
-		log.Printf("dump to file %s", fname)
+// set log output writer
+func SetLogOutput(logWriter io.Writer) {
+	log.SetOutput(logWriter)
+}
 
-		f, ierr := os.Create(fname)
-		if ierr != nil {
-			log.Printf("PanicHandler: create %s failed: %v", fname, ierr)
+// dump then panic
+func PanicHandler() {
+	if err := recover(); err != nil { // NOTE: cannot put recover inside `panicHandler`, otherwise no effect.
+		panicHandler(err, true)
+	}
+}
+
+// dump then recover
+func RecoverHandler() {
+	if err := recover(); err != nil { // NOTE: cannot put recover inside `panicHandler`, otherwise no effect.
+		panicHandler(err, false)
+	}
+}
+
+func panicHandler(err interface{}, passPanic bool) {
+	defer func() {
+		if passPanic {
 			panic(err)
-			return
+		} else {
+			log.Printf("PanicHandler: dump panic and continue. detail: %v", err)
 		}
-		defer f.Close()
-		header := fmt.Sprintf(`Time: %s
+	}()
+
+	fname, ierr := getDumpName()
+	if ierr != nil {
+		log.Printf("PanicHandler: getDumpName failed: %v", ierr)
+		return
+	}
+	log.Printf("dump to file %s", fname)
+
+	f, ierr := os.Create(fname)
+	if ierr != nil {
+		log.Printf("PanicHandler: create %s failed: %v", fname, ierr)
+		return
+	}
+	defer f.Close()
+	header := fmt.Sprintf(`Time: %s
 Pid: %d
 Reason: %+v
 ===================
 `, time.Now().Format("2006-01-02 15:04:05.000 MST"), os.Getpid(), err)
-		f.WriteString(header)  //输出panic信息
-		f.Write(debug.Stack()) //输出堆栈信息
-		panic(err)
-	}
+	f.WriteString(header)  //输出panic信息
+	f.Write(debug.Stack()) //输出堆栈信息
+	return
 }
 
+// dump then panic goroutine
 func WithPanicHandler(routine func()) {
 	defer PanicHandler()
+	routine()
+}
+
+// dump then recover goroutine
+func WithRecoverHandler(routine func()) {
+	defer RecoverHandler()
 	routine()
 }

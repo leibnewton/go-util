@@ -19,15 +19,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer dump.PanicHandler()
 
 	fmt.Println("hello world:", os.Args)
 	if len(os.Args) > 1 {
-		if os.Args[1] == "panic" {
+		switch os.Args[1] {
+		case "panic":
+			defer dump.PanicHandler()
 			doTask()
-		} else if os.Args[1] == "gopanic" {
+		case "gopanic":
 			go dump.WithPanicHandler(doTask)
+			time.Sleep(time.Second)
+		case "recover":
+			defer dump.RecoverHandler()
+			doTask()
+		case "gorecover":
+			go dump.WithRecoverHandler(doTask)
 			time.Sleep(time.Second)
 		}
 	}
+	log.Printf("done")
+	select {}
 }
