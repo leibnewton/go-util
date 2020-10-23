@@ -9,12 +9,14 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/leibnewton/go-util/notify"
 	"github.com/leibnewton/go-util/proc"
 )
 
 var (
-	dumpPath string = "."
-	maxDumps int    = 10
+	dumpPath   = "."
+	maxDumps   = 10
+	showMsgBox = true
 )
 
 // if relativeToWorkDir set to true, will save dump file according to working directory,
@@ -34,6 +36,10 @@ func SetPath(max int, dpath string, relativeToWorkDir bool) error {
 	}
 	maxDumps = max
 	return nil
+}
+
+func EnableMessageBox(enable bool) {
+	showMsgBox = enable
 }
 
 // set log output writer
@@ -58,6 +64,8 @@ func RecoverHandler() {
 func panicHandler(err interface{}, passPanic bool) {
 	defer func() {
 		if passPanic {
+			notify.ShowAppTopMessage(notify.BoxTypeError, "Exception Caught",
+				fmt.Sprintf("Application will EXIT due to error:\n  %v", err))
 			panic(err)
 		} else {
 			log.Printf("PanicHandler: dump panic and continue. detail: %v", err)

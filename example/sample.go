@@ -36,7 +36,7 @@ func main() {
 			go dump.WithRecoverHandler(doTask)
 			time.Sleep(time.Second)
 		}
+		select {}
 	}
 	log.Printf("done")
-	select {}
 }
