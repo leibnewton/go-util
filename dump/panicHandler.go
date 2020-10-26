@@ -64,7 +64,7 @@ func RecoverHandler() {
 func panicHandler(err interface{}, passPanic bool) {
 	defer func() {
 		if passPanic {
-			notify.ShowAppTopMessage(notify.BoxTypeError, "Exception Caught",
+			notify.ShowSysTopMessage(notify.BoxTypeError, "Exception Caught",
 				fmt.Sprintf("Application will EXIT due to error:\n  %v", err))
 			panic(err)
 		} else {
