@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	dumpPath   = "."
-	maxDumps   = 10
-	showMsgBox = true
+	dumpPath    = "."
+	maxDumps    = 10
+	showMsgBox  = true
+	titleMsgBox = "程序出现异常(Exception Caught)"
 )
 
 // if relativeToWorkDir set to true, will save dump file according to working directory,
@@ -38,8 +39,11 @@ func SetPath(max int, dpath string, relativeToWorkDir bool) error {
 	return nil
 }
 
-func EnableMessageBox(enable bool) {
+func EnableMessageBox(enable bool, title string) {
 	showMsgBox = enable
+	if len(title) > 0 {
+		titleMsgBox = title
+	}
 }
 
 // set log output writer
@@ -64,8 +68,10 @@ func RecoverHandler() {
 func panicHandler(err interface{}, passPanic bool) {
 	defer func() {
 		if passPanic {
-			notify.ShowSysTopMessage(notify.BoxTypeError, "Exception Caught",
-				fmt.Sprintf("Application will EXIT due to error:\n  %v", err))
+			if showMsgBox {
+				notify.ShowSysTopMessage(notify.BoxTypeError, titleMsgBox,
+					fmt.Sprintf("Application will EXIT due to error:\n  %v", err))
+			}
 			panic(err)
 		} else {
 			log.Printf("PanicHandler: dump panic and continue. detail: %v", err)
