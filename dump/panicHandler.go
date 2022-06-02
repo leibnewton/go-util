@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"sync/atomic"
 	"time"
 
 	"github.com/leibnewton/go-util/notify"
@@ -18,7 +19,11 @@ var (
 	maxDumps    = 10
 	showMsgBox  = true
 	titleMsgBox = "程序出现异常(Exception Caught)"
+
+	panicReporter atomic.Value
 )
+
+type PanicReporter func(interface{}, []byte) // error, stack
 
 // if relativeToWorkDir set to true, will save dump file according to working directory,
 //    otherwise will save dump file according to directory where the exe resides.
@@ -49,6 +54,10 @@ func EnableMessageBox(enable bool, title string) {
 // set log output writer
 func SetLogOutput(logWriter io.Writer) {
 	log.SetOutput(logWriter)
+}
+
+func SetPanicReporter(reporter PanicReporter) {
+	panicReporter.Store(reporter)
 }
 
 // dump then panic
@@ -96,8 +105,13 @@ Pid: %d
 Reason: %+v
 ===================
 `, time.Now().Format("2006-01-02 15:04:05.000 MST"), os.Getpid(), err)
-	f.WriteString(header)  //输出panic信息
-	f.Write(debug.Stack()) //输出堆栈信息
+	stack := debug.Stack()
+	f.WriteString(header) //输出panic信息
+	f.Write(stack)        //输出堆栈信息
+	reporter := panicReporter.Load()
+	if rep, ok := reporter.(PanicReporter); ok && rep != nil {
+		rep(err, stack)
+	}
 	return
 }
 

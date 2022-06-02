@@ -21,6 +21,11 @@ func main() {
 	}
 
 	fmt.Println("hello world:", os.Args)
+	if len(os.Args) > 2 && os.Args[2] == "report" {
+		dump.SetPanicReporter(func(err interface{}, stack []byte) {
+			log.Printf("------\nreport panic: %s stack: \n%s\n------", err, stack)
+		})
+	}
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "panic":
